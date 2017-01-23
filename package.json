@@ -1,0 +1,24 @@
+{
+  "name": "face2facejs",
+  "version": "1.0.0",
+  "description": "WebRTC connector",
+  "main": "index.js",
+  "dependencies": {
+    "vue": "^2.1.10"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "postinstall": "mv node_modules ./serve/"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Rhathe/face2facejs.git"
+  },
+  "author": "Rhathe",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Rhathe/face2facejs/issues"
+  },
+  "homepage": "https://github.com/Rhathe/face2facejs#readme"
+}

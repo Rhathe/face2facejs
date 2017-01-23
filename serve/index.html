@@ -1,0 +1,41 @@
+<html>
+<head>
+	<script src="./webrtc.js"></script>
+	<script src="./node_modules/vue/dist/vue.js"></script>
+	<script src="./app.js"></script>
+</head>
+
+<body>
+	<script>
+	</script>
+
+	<div id="app">
+		<div>
+			<button v-on:click="setAsHost()">Host</button>
+			<button v-on:click="setAsClient()">Client</button>
+		</div>
+
+		<div id="main">
+			<div v-if="type === 'host'" id="host">
+				<p>Enter client sdp:</p>
+				<input v-model="remoteAnswerSdp"></input>
+				<button v-on:click="connectToClient()">Connect</button>
+
+				<p>Host sdp:</p>
+				<textarea readonly style="width: 1000px; height: 300px;" v-model="sdp">
+				</textarea>
+			</div>
+			<div v-if="type === 'client'" id="client">
+				<p>Enter host sdp:</p>
+				<input v-model="remoteOfferSdp"></input>
+				<button v-on:click="connectAsClient()">Connect</button>
+
+				<p>Client sdp:</p>
+				<textarea readonly style="width: 1000px; height: 300px;" v-model="sdp">
+				</textarea>
+			</div>
+		</div>
+	</div>
+
+</body>
+</html>
