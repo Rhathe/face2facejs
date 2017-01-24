@@ -7,7 +7,7 @@ window.app = new Vue({
 		type: null,
 		remoteAnswer: null,
 		remoteOffer: null,
-		localValues: null
+		miniSdp: null
 	},
 	methods: {
 		setAsHost: function() {
@@ -18,7 +18,7 @@ window.app = new Vue({
 			this.rtc = new HostRTCConnection();
 
 			this.rtc.host().then(values => {
-				this.localValues = JSON.stringify(values);
+				this.miniSdp = JSON.stringify(values.minimized);
 			});
 		},
 
@@ -32,7 +32,7 @@ window.app = new Vue({
 
 		connectAsClient: function() {
 			return this.rtc.connect(this.remoteOffer).then(values => {
-				this.localValues = JSON.stringify(values);
+				this.miniSdp = JSON.stringify(values.minimized);
 			});
 		},
 

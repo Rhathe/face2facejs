@@ -1,5 +1,6 @@
 <html>
 <head>
+	<script src="./sdp-minimizer.js"></script>
 	<script src="./webrtc.js"></script>
 	<script src="./node_modules/vue/dist/vue.js"></script>
 	<script src="./app.js"></script>
@@ -22,7 +23,7 @@
 				<button v-on:click="connectToClient()">Connect</button>
 
 				<p>Host data:</p>
-				<textarea readonly style="width: 1000px; height: 300px;" v-model="localValues">
+				<textarea readonly style="width: 1000px; height: 300px;" v-model="miniSdp">
 				</textarea>
 			</div>
 			<div v-if="type === 'client'" id="client">
@@ -31,7 +32,7 @@
 				<button v-on:click="connectAsClient()">Connect</button>
 
 				<p>Client data:</p>
-				<textarea readonly style="width: 1000px; height: 300px;" v-model="localValues">
+				<textarea readonly style="width: 1000px; height: 300px;" v-model="miniSdp">
 				</textarea>
 			</div>
 		</div>

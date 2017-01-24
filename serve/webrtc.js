@@ -4,6 +4,8 @@ const RTCPeerConnection = window.RTCPeerConnection ||
 	window.webkitRTCPeerConnection ||
 	window.mozRTCPeerConnection;
 
+const mini = new Minimizer();
+
 
 class RTCConnection {
 	constructor(options = {}) {
@@ -11,6 +13,8 @@ class RTCConnection {
 
 		this.localValues = {
 			sdp: null,
+			type: null,
+			minimized: null,
 			candidates: []
 		};
 
@@ -35,9 +39,21 @@ class RTCConnection {
 		this.pc.close();
 	}
 
+	getMinimized() {
+		this.localValues.minimized = mini.reduce(this.localValues);
+		return this.localValues.minimized;
+	}
+
+	setSdp(sdpObj) {
+		this.localValues.sdp = sdpObj.sdp;
+		this.localValues.type = sdpObj.type;
+		this.getMinimized();
+	}
+
 	onIceCandidate(candidate) {
 		const fn = this.options.onIceCandidate;
 		fn && fn(candidate);
+		this.getMinimized();
 	}
 
 	setDc() {
@@ -47,7 +63,7 @@ class RTCConnection {
 	}
 
 	connect(_values) {
-		const values = JSON.parse(_values);
+		const values = mini.expand(_values)[this.remoteType];
 		const rd = new RTCSessionDescription({
 			type: this.remoteType,
 			sdp: values.sdp
@@ -74,7 +90,7 @@ class HostRTCConnection extends RTCConnection {
 
 	host() {
 		return this.pc.createOffer().then((offer) => {
-			this.localValues.sdp = offer.sdp;
+			this.setSdp(offer);
 			return this.pc.setLocalDescription(offer);
 		}).then(() => {
 			return this.gotAllCandidates;
@@ -100,7 +116,7 @@ class ClientRTCConnection extends RTCConnection {
 		return super.connect(_values).then(values => {
 			return this.pc.createAnswer();
 		}).then((answer) => {
-			this.localValues.sdp = answer.sdp;
+			this.setSdp(answer);
 			return this.pc.setLocalDescription(answer);
 		}).then(() => {
 			return this.gotAllCandidates;
