@@ -17,21 +17,21 @@
 
 		<div id="main">
 			<div v-if="type === 'host'" id="host">
-				<p>Enter client sdp:</p>
-				<input v-model="remoteAnswerSdp"></input>
+				<p>Enter client data:</p>
+				<input v-model="remoteAnswer"></input>
 				<button v-on:click="connectToClient()">Connect</button>
 
-				<p>Host sdp:</p>
-				<textarea readonly style="width: 1000px; height: 300px;" v-model="sdp">
+				<p>Host data:</p>
+				<textarea readonly style="width: 1000px; height: 300px;" v-model="localValues">
 				</textarea>
 			</div>
 			<div v-if="type === 'client'" id="client">
-				<p>Enter host sdp:</p>
-				<input v-model="remoteOfferSdp"></input>
+				<p>Enter host data:</p>
+				<input v-model="remoteOffer"></input>
 				<button v-on:click="connectAsClient()">Connect</button>
 
-				<p>Client sdp:</p>
-				<textarea readonly style="width: 1000px; height: 300px;" v-model="sdp">
+				<p>Client data:</p>
+				<textarea readonly style="width: 1000px; height: 300px;" v-model="localValues">
 				</textarea>
 			</div>
 		</div>
