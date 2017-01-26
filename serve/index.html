@@ -1,5 +1,7 @@
 <html>
 <head>
+	<script src="./node_modules/qrcode-reader/dist/index.js"></script>
+	<script src="./vendor/qrcode.js"></script>
 	<script src="./sdp-minimizer.js"></script>
 	<script src="./webrtc.js"></script>
 	<script src="./node_modules/vue/dist/vue.js"></script>
@@ -23,8 +25,8 @@
 				<button v-on:click="connectToClient()">Connect</button>
 
 				<p>Host data:</p>
-				<textarea readonly style="width: 1000px; height: 300px;" v-model="miniSdp">
-				</textarea>
+				<canvas v-qr-code="getImageData()"></canvas>
+				<textarea readonly style="width: 500px; height: 100px;">{{getMinimized()}}</textarea>
 			</div>
 			<div v-if="type === 'client'" id="client">
 				<p>Enter host data:</p>
@@ -32,8 +34,7 @@
 				<button v-on:click="connectAsClient()">Connect</button>
 
 				<p>Client data:</p>
-				<textarea readonly style="width: 1000px; height: 300px;" v-model="miniSdp">
-				</textarea>
+				<textarea readonly style="width: 500px; height: 100px;">{{getMinimized()}}</textarea>
 			</div>
 		</div>
 	</div>

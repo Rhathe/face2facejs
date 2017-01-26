@@ -17,9 +17,15 @@ window.app = new Vue({
 			this.rtc && this.rtc.close();
 			this.rtc = new HostRTCConnection();
 
-			this.rtc.host().then(values => {
-				this.miniSdp = JSON.stringify(values.minimized);
-			});
+			this.rtc.host();
+		},
+
+		getImageData() {
+			return this.rtc && this.rtc.localValues.imageData;
+		},
+
+		getMinimized() {
+			return this.rtc && JSON.stringify(this.rtc.localValues.minimized);
 		},
 
 		setAsClient: function() {
@@ -31,14 +37,23 @@ window.app = new Vue({
 		},
 
 		connectAsClient: function() {
-			return this.rtc.connect(this.remoteOffer).then(values => {
-				this.miniSdp = JSON.stringify(values.minimized);
-			});
+			return this.rtc.connect(this.remoteOffer);
 		},
 
 		connectToClient: function() {
 			return this.rtc.connect(this.remoteAnswer);
 		},
+	},
+	directives: {
+		qrCode: function(canvas, binding) {
+			const ctx = canvas.getContext('2d');
+			if (binding.value) {
+				data = binding.value;
+				canvas.height = data.height;
+				canvas.width = data.width;
+				ctx.putImageData(data, 0, 0);
+			}
+		}
 	}
 });
 

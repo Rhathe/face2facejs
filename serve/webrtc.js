@@ -5,16 +5,20 @@ const RTCPeerConnection = window.RTCPeerConnection ||
 	window.mozRTCPeerConnection;
 
 const mini = new Minimizer();
-
+const qrcodedraw = new qrcodelib.qrcodedraw();
+ 
 
 class RTCConnection {
 	constructor(options = {}) {
+		this.onUpdateLocalValues = x => x;
+
 		this.options = options;
 
 		this.localValues = {
 			sdp: null,
 			type: null,
 			minimized: null,
+			imageData: null,
 			candidates: []
 		};
 
@@ -24,7 +28,11 @@ class RTCConnection {
 		this.gotAllCandidates = new Promise((resolve, reject) => {
 			this.pc.onicecandidate = e => {
 				if (e.candidate) {
-					this.localValues.candidates.push(e.candidate);
+					if (this.skipIPV6(e.candidate)) return;
+
+					this.updateLocalValues({
+						candidates: [e.candidate]
+					});
 					this.onIceCandidate(e.candidate);
 				} else {
 					resolve(this.localValues);
@@ -39,27 +47,75 @@ class RTCConnection {
 		this.pc.close();
 	}
 
-	getMinimized() {
+	skipIPV6(c) {
+		const re = [1,2,3,4,5,6,7,8].map(x => '[a-zA-Z0-9]{0,4}').join(':');
+		if (c.candidate.match(new RegExp(re))) return true;
+		return false;
+	}
+
+	updateLocalValues(values) {
+		const candidates = values.candidates || [];
+		delete values.candidates;
+		Object.assign(this.localValues, values);
+
+		this.localValues.candidates = this.localValues.candidates.concat(candidates);
+		this.loadMinimized();
+		this.loadImageData();
+		this.onUpdateLocalValues(this.localValues);
+	}
+
+	loadImageData() {
+		const el = document.createElement('canvas');
+		const data = JSON.stringify(this.localValues.minimized);
+		const options = {
+			errorCorrectLevel: 'L',
+		}
+
+		qrcodedraw.draw(el, data, options, (error, canvas) => {
+			if (error) {
+				console.error(error)
+			} else {
+				const ctx = canvas.getContext('2d');
+				this.localValues.imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+				this.onUpdateLocalValues(this.localValues);
+			}
+		});
+	}
+
+	loadMinimized() {
 		this.localValues.minimized = mini.reduce(this.localValues);
 		return this.localValues.minimized;
 	}
 
 	setSdp(sdpObj) {
-		this.localValues.sdp = sdpObj.sdp;
-		this.localValues.type = sdpObj.type;
-		this.getMinimized();
+		this.updateLocalValues({
+			sdp: sdpObj.sdp,
+			type: sdpObj.type
+		});
 	}
 
 	onIceCandidate(candidate) {
 		const fn = this.options.onIceCandidate;
 		fn && fn(candidate);
-		this.getMinimized();
 	}
 
 	setDc() {
-		this.dc.onmessage = msg => console.log('got msg', msg);
-		this.dc.onopen = ev => console.log('onopen state', ev.readyState);
-		this.dc.onclose = ev => console.log('onclose state', ev.readyState);
+		this.onMessage = this.onMessage || (x => x);
+		this.dc.onmessage = msg => {
+			this.onMessage(msg);
+		};
+
+		this.onOpen = new Promise((resolve, reject) => {
+			this.dc.onopen = ev => {
+				resolve('Connection opened');
+			}
+		});
+
+		this.onClose = new Promise((resolve, reject) => {
+			this.dc.onclose = ev => {
+				resolve('Connection closed');
+			}
+		});
 	}
 
 	connect(_values) {

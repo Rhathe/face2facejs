@@ -4,6 +4,7 @@
   "description": "WebRTC connector",
   "main": "index.js",
   "dependencies": {
+    "qrcode-reader": "^0.2.2",
     "vue": "^2.1.10"
   },
   "devDependencies": {},
