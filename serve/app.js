@@ -12,8 +12,10 @@ window.app = new Vue({
 		begin: function() {
 			this.face2face && this.face2face.close();
 			this.face2face = new Face2Face({
-				canvas: document.getElementById('frame')
+				canvas: document.getElementById('frame'),
+				onMessage: x => console.log('got msg', x)
 			});
+
 			this.face2face.begin();
 		},
 

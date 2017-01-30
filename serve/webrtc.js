@@ -24,6 +24,10 @@ class RTCConnection {
 		const rtcConfig = Object.assign({iceServers: []}, options.rtcConfig || {});
 		this.pc = new RTCPeerConnection(rtcConfig);
 
+		this.onReady = new Promise((resolve, reject) => {
+			this.onReadyResolve = resolve;
+		});
+
 		this.gotAllCandidates = new Promise((resolve, reject) => {
 			this.pc.onicecandidate = e => {
 				if (e.candidate) {
@@ -77,8 +81,14 @@ class RTCConnection {
 		fn && fn(candidate);
 	}
 
+	send(msg) {
+		return this.onReady.then(() => {
+			this.dc.send(msg);
+		});
+	}
+
 	setDc() {
-		this.onMessage = this.onMessage || (x => x);
+		this.onMessage = this.options.onMessage || (x => x);
 		this.dc.onmessage = msg => {
 			this.onMessage(msg);
 		};
@@ -94,6 +104,8 @@ class RTCConnection {
 				resolve('Connection closed');
 			}
 		});
+
+		this.onOpen.then(() => this.onReadyResolve());
 	}
 
 	connect(_values) {
@@ -175,6 +187,36 @@ class Face2Face {
 
 		this.hostConn = new HostRTCConnection(options);
 		this.clientConn = new ClientRTCConnection(options);
+		this.init();
+	}
+
+	init() {
+		this.onConnections = new Promise((resolve, reject) => { 
+			let resolved = false;
+			const conns = [this.hostConn, this.clientConn];
+
+			conns.forEach(conn => {
+				conn.onReady.then(() => {
+					if (!resolved) {
+						resolved = true;
+						this.oneTrueConnection(conn, resolve);
+					}
+				});
+			});
+		});
+	}
+
+	stopCamera() {
+		if (this.snapshotInterval) {
+			clearInterval(this.snapshotInterval);
+		}
+	}
+
+	oneTrueConnection(conn, resolve) {
+		this.connection = conn;
+		this.connection.send('Connection established');
+		this.stopCamera();
+		resolve(conn);
 	}
 
 	get qrDecoder() {
@@ -202,7 +244,9 @@ class Face2Face {
 	}
 
 	onUpdateLocalValues(values) {
-		Object.assign(this.localValues.minimized, values.minimized);
+		// Replace minimized, to reduce 
+		// Object.assign(this.localValues.minimized, values.minimized);
+		this.localValues.minimized = values.minimized;
 		this.loadImageData();
 	}
 
@@ -224,15 +268,20 @@ class Face2Face {
 	}
 
 	updateRemoteValues(values) {
-		Object.keys(values).forEach((k) => {
-			const value = values[k];
+		const parsedValues = JSON.parse(values);
+
+		Object.keys(parsedValues).forEach((k) => {
+			const value = parsedValues[k];
+
 			if (this.remoteValues[k] !== value) {
-				this.remoteValues[k] = value;
+				const remoteValue = {};
+				remoteValue[k] = value;
+				Object.assign(this.remoteValues, remoteValue);
 
 				if (k === 'A') {
-					this.hostConn.connect(values);
+					this.hostConn.connect(JSON.stringify(remoteValue));
 				} else {
-					this.clientConn.connect(values);
+					this.clientConn.connect(JSON.stringify(remoteValue));
 				}
 			}
 		});
@@ -241,10 +290,7 @@ class Face2Face {
 	close() {
 		this.hostConn.pc.close();
 		this.clientConn.pc.close();
-
-		if (this.snapshotInterval) {
-			clearInterval(this.snapshotInterval);
-		}
+		this.stopCamera();
 	}
 
 }
