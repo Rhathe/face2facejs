@@ -1,6 +1,6 @@
 <html>
 <head>
-	<script src="./node_modules/qrcode-reader/dist/index.js"></script>
+	<script src="./node_modules/quirc.js/quirc.js"></script>
 	<script src="./vendor/qrcode.js"></script>
 	<script src="./sdp-minimizer.js"></script>
 	<script src="./webrtc.js"></script>
@@ -9,16 +9,22 @@
 </head>
 
 <body>
-	<script>
-	</script>
+	<style>
+		.buttons button {
+			width: 200px;
+			height: 40px;
+		}
+	</style>
 
 	<div id="app">
-		<div>
+		<div class="buttons">
 			<button v-on:click="setAsHost()">Host</button>
 			<button v-on:click="setAsClient()">Client</button>
 		</div>
 
 		<div id="main">
+			<canvas id="frame"></canvas>
+
 			<div v-if="type === 'host'" id="host">
 				<p>Enter client data:</p>
 				<input v-model="remoteAnswer"></input>

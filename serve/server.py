@@ -14,6 +14,9 @@ pem_dir = os.environ.get('SERVER_PEM_DIR', '')
 cert = pem_dir + '/fullchain.pem'
 keyfile = pem_dir + '/privkey.pem'
 
-httpd = BaseHTTPServer.HTTPServer(('', 9001), SimpleHTTPServer.SimpleHTTPRequestHandler)
+port = 9001
+httpd = BaseHTTPServer.HTTPServer(('', port), SimpleHTTPServer.SimpleHTTPRequestHandler)
 httpd.socket = ssl.wrap_socket (httpd.socket, certfile=cert, keyfile=keyfile, server_side=True)
+
+print 'Serving on port %s' % port
 httpd.serve_forever()

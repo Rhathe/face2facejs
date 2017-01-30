@@ -4,13 +4,13 @@
   "description": "WebRTC connector",
   "main": "index.js",
   "dependencies": {
-    "qrcode-reader": "^0.2.2",
+    "quirc.js": "git+https://github.com/Rhathe/quirc.js.git",
     "vue": "^2.1.10"
   },
   "devDependencies": {},
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "postinstall": "mv node_modules ./serve/"
+    "postinstall": "rm -rf ./serve/node_modules && mv node_modules ./serve/"
   },
   "repository": {
     "type": "git",

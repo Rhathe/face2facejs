@@ -6,7 +6,8 @@ const RTCPeerConnection = window.RTCPeerConnection ||
 
 const mini = new Minimizer();
 const qrcodedraw = new qrcodelib.qrcodedraw();
- 
+let qrDecoder;
+
 
 class RTCConnection {
 	constructor(options = {}) {
@@ -21,6 +22,8 @@ class RTCConnection {
 			imageData: null,
 			candidates: []
 		};
+
+		this.remoteValues = {};
 
 		const rtcConfig = Object.assign({iceServers: []}, options.rtcConfig || {});
 		this.pc = new RTCPeerConnection(rtcConfig);
@@ -41,10 +44,47 @@ class RTCConnection {
 		});
 
 		this.setDc();
+		this.getCamera();
+	}
+
+	updateRemoteValues(values) {
+		let updated = false;
+
+		Object.keys(values).forEach((k) => {
+			const value = values[k];
+			if (this.remoteValues[k] !== value) {
+				this.remoteValues[k] = value;
+				updated = true;
+			}
+		});
+
+		if (updated) this.connect(values);
+	}
+
+	get qrDecoder() {
+		qrDecoder = qrDecoder || QrDecoder({
+			canvas: this.options.canvas
+		});
+		return qrDecoder;
+	}
+
+	getCamera() {
+		return this.qrDecoder.loaded.then(() => {
+			this.snapshotInterval = setInterval(() => {
+				this.qrDecoder.grabFrameAndDecode().then((res) => {
+					if (!res) return;
+					this.qrDecoder.drawDetectionOnCanvas(...res.coordinates);
+					this.updateRemoteValues(res.result);
+				});
+			}, 100);
+		});
 	}
 
 	close() {
 		this.pc.close();
+		if (this.snapshotInterval) {
+			clearInterval(this.snapshotInterval);
+		}
 	}
 
 	skipIPV6(c) {
@@ -134,8 +174,8 @@ class RTCConnection {
 
 
 class HostRTCConnection extends RTCConnection {
-	constructor() {
-		super();
+	constructor(options) {
+		super(options);
 		this.remoteType = 'answer';
 	}
 
@@ -156,8 +196,8 @@ class HostRTCConnection extends RTCConnection {
 
 
 class ClientRTCConnection extends RTCConnection {
-	constructor() {
-		super();
+	constructor(options) {
+		super(options);
 		this.remoteType = 'offer';
 	}
 

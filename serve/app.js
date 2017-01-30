@@ -15,7 +15,9 @@ window.app = new Vue({
 			this.localValues = null;
 
 			this.rtc && this.rtc.close();
-			this.rtc = new HostRTCConnection();
+			this.rtc = new HostRTCConnection({
+				canvas: document.getElementById('frame')
+			});
 
 			this.rtc.host();
 		},
@@ -33,7 +35,9 @@ window.app = new Vue({
 			this.localValues = null;
 
 			this.rtc && this.rtc.close();
-			this.rtc = new ClientRTCConnection();
+			this.rtc = new ClientRTCConnection({
+				canvas: document.getElementById('frame')
+			});
 		},
 
 		connectAsClient: function() {
