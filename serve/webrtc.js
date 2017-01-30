@@ -11,8 +11,6 @@ let qrDecoder;
 
 class RTCConnection {
 	constructor(options = {}) {
-		this.onUpdateLocalValues = x => x;
-
 		this.options = options;
 
 		this.localValues = {
@@ -22,8 +20,6 @@ class RTCConnection {
 			imageData: null,
 			candidates: []
 		};
-
-		this.remoteValues = {};
 
 		const rtcConfig = Object.assign({iceServers: []}, options.rtcConfig || {});
 		this.pc = new RTCPeerConnection(rtcConfig);
@@ -44,47 +40,6 @@ class RTCConnection {
 		});
 
 		this.setDc();
-		this.getCamera();
-	}
-
-	updateRemoteValues(values) {
-		let updated = false;
-
-		Object.keys(values).forEach((k) => {
-			const value = values[k];
-			if (this.remoteValues[k] !== value) {
-				this.remoteValues[k] = value;
-				updated = true;
-			}
-		});
-
-		if (updated) this.connect(values);
-	}
-
-	get qrDecoder() {
-		qrDecoder = qrDecoder || QrDecoder({
-			canvas: this.options.canvas
-		});
-		return qrDecoder;
-	}
-
-	getCamera() {
-		return this.qrDecoder.loaded.then(() => {
-			this.snapshotInterval = setInterval(() => {
-				this.qrDecoder.grabFrameAndDecode().then((res) => {
-					if (!res) return;
-					this.qrDecoder.drawDetectionOnCanvas(...res.coordinates);
-					this.updateRemoteValues(res.result);
-				});
-			}, 100);
-		});
-	}
-
-	close() {
-		this.pc.close();
-		if (this.snapshotInterval) {
-			clearInterval(this.snapshotInterval);
-		}
 	}
 
 	skipIPV6(c) {
@@ -100,26 +55,9 @@ class RTCConnection {
 
 		this.localValues.candidates = this.localValues.candidates.concat(candidates);
 		this.loadMinimized();
-		this.loadImageData();
-		this.onUpdateLocalValues(this.localValues);
-	}
 
-	loadImageData() {
-		const el = document.createElement('canvas');
-		const data = JSON.stringify(this.localValues.minimized);
-		const options = {
-			errorCorrectLevel: 'L',
-		}
-
-		qrcodedraw.draw(el, data, options, (error, canvas) => {
-			if (error) {
-				console.error(error)
-			} else {
-				const ctx = canvas.getContext('2d');
-				this.localValues.imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-				this.onUpdateLocalValues(this.localValues);
-			}
-		});
+		const onUpdate = this.options.onUpdateLocalValues;
+		onUpdate && onUpdate(this.localValues);
 	}
 
 	loadMinimized() {
@@ -218,4 +156,95 @@ class ClientRTCConnection extends RTCConnection {
 			return this.gotAllCandidates;
 		});
 	}
+}
+
+
+class Face2Face {
+	constructor(_options) {
+		this.options = _options;
+
+		this.remoteValues = {};
+		this.localValues = {
+			minimized: {},
+			imageData: null
+		};
+
+		const options = Object.assign({
+			onUpdateLocalValues: x => this.onUpdateLocalValues(x)
+		}, _options);
+
+		this.hostConn = new HostRTCConnection(options);
+		this.clientConn = new ClientRTCConnection(options);
+	}
+
+	get qrDecoder() {
+		qrDecoder = qrDecoder || QrDecoder({
+			canvas: this.options.canvas
+		});
+		return qrDecoder;
+	}
+
+	begin() {
+		this.getCamera();
+		this.hostConn.host();
+	}
+
+	getCamera() {
+		return this.qrDecoder.loaded.then(() => {
+			this.snapshotInterval = setInterval(() => {
+				this.qrDecoder.grabFrameAndDecode().then((res) => {
+					if (!res) return;
+					this.qrDecoder.drawDetectionOnCanvas(...res.coordinates);
+					this.updateRemoteValues(res.result);
+				});
+			}, 100);
+		});
+	}
+
+	onUpdateLocalValues(values) {
+		Object.assign(this.localValues.minimized, values.minimized);
+		this.loadImageData();
+	}
+
+	loadImageData() {
+		const el = document.createElement('canvas');
+		const data = JSON.stringify(this.localValues.minimized);
+		const options = {
+			errorCorrectLevel: 'L',
+		}
+
+		qrcodedraw.draw(el, data, options, (error, canvas) => {
+			if (error) {
+				console.error(error)
+			} else {
+				const ctx = canvas.getContext('2d');
+				this.localValues.imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+			}
+		});
+	}
+
+	updateRemoteValues(values) {
+		Object.keys(values).forEach((k) => {
+			const value = values[k];
+			if (this.remoteValues[k] !== value) {
+				this.remoteValues[k] = value;
+
+				if (k === 'A') {
+					this.hostConn.connect(values);
+				} else {
+					this.clientConn.connect(values);
+				}
+			}
+		});
+	}
+
+	close() {
+		this.hostConn.pc.close();
+		this.clientConn.pc.close();
+
+		if (this.snapshotInterval) {
+			clearInterval(this.snapshotInterval);
+		}
+	}
+
 }

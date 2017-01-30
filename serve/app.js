@@ -3,50 +3,27 @@ window.onload = () => {
 window.app = new Vue({
 	el: '#app',
 	data: {
-		rtc: null,
-		type: null,
+		face2face: null,
 		remoteAnswer: null,
 		remoteOffer: null,
 		miniSdp: null
 	},
 	methods: {
-		setAsHost: function() {
-			this.type = 'host';
-			this.localValues = null;
-
-			this.rtc && this.rtc.close();
-			this.rtc = new HostRTCConnection({
+		begin: function() {
+			this.face2face && this.face2face.close();
+			this.face2face = new Face2Face({
 				canvas: document.getElementById('frame')
 			});
-
-			this.rtc.host();
+			this.face2face.begin();
 		},
 
 		getImageData() {
-			return this.rtc && this.rtc.localValues.imageData;
+			return this.face2face && this.face2face.localValues.imageData;
 		},
 
 		getMinimized() {
-			return this.rtc && JSON.stringify(this.rtc.localValues.minimized);
-		},
-
-		setAsClient: function() {
-			this.type = 'client';
-			this.localValues = null;
-
-			this.rtc && this.rtc.close();
-			this.rtc = new ClientRTCConnection({
-				canvas: document.getElementById('frame')
-			});
-		},
-
-		connectAsClient: function() {
-			return this.rtc.connect(this.remoteOffer);
-		},
-
-		connectToClient: function() {
-			return this.rtc.connect(this.remoteAnswer);
-		},
+			return this.face2face && JSON.stringify(this.face2face.localValues.minimized);
+		}
 	},
 	directives: {
 		qrCode: function(canvas, binding) {
