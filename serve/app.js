@@ -56,6 +56,8 @@ window.app = new Vue({
 				canvas.height = data.height;
 				canvas.width = data.width;
 				ctx.putImageData(data, 0, 0);
+			} else {
+				ctx.clearRect(0, 0, canvas.width, canvas.height);
 			}
 		}
 	}
